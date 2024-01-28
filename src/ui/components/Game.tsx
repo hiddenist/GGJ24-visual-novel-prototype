@@ -12,17 +12,6 @@ export const Game: React.FC<GameProps> = () => {
   React.useEffect(() => {
     engine.start()
   }, [engine])
-  React.useEffect(() => {
-    const onContinueKeyPress = (e: KeyboardEvent) => {
-      if (e.key === " " || e.key === "Enter") {
-        engine.next()
-      }
-    }
-    window.addEventListener("keydown", onContinueKeyPress)
-    return () => {
-      window.removeEventListener("keydown", onContinueKeyPress)
-    }
-  }, [engine])
   return (
     <SceneBackground>
       <MessageBox />
@@ -56,6 +45,8 @@ const MessageBox: React.FC<unknown> = () => {
 
   const [options, setOptions] = React.useState<OptionDisplay[]>()
 
+  const isNextDisabled = (!isMessageFinished && options !== undefined) || isEnd
+
 
   React.useEffect(() => {
     engine.subscribe(DialogEventType.DisplayMessage, ({ message, dialog }) => {
@@ -65,7 +56,25 @@ const MessageBox: React.FC<unknown> = () => {
     })
   }, [engine])
 
-  const isNextDisabled = (!isMessageFinished && options !== undefined) || isEnd
+  const handleNext = React.useCallback(() => {
+    if (!isMessageFinished) {
+      messageRef.current?.finish()
+      return
+    }
+    !isNextDisabled && engine.next()
+  }, [isMessageFinished, isNextDisabled, engine])
+
+  React.useEffect(() => {
+    const onContinueKeyPress = (e: KeyboardEvent) => {
+      if (e.key === " " || e.key === "Enter") {
+        handleNext()
+      }
+    }
+    window.addEventListener("keydown", onContinueKeyPress)
+    return () => {
+      window.removeEventListener("keydown", onContinueKeyPress)
+    }
+  }, [handleNext])
 
   if (!message) return null
 
@@ -80,13 +89,7 @@ const MessageBox: React.FC<unknown> = () => {
           }}
         />
       )}
-      <div className="message-box" asia-disabled={isNextDisabled.toString()} onClick={() => {
-        if (!isMessageFinished) {
-          messageRef.current?.finish()
-          return
-        }
-        !isNextDisabled && engine.next()
-      }}>
+      <div className="message-box" asia-disabled={isNextDisabled.toString()} onClick={handleNext}>
         {message?.speaker && <div className="speaker">{message.speaker}</div>}
 
         <div>

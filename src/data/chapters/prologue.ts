@@ -23,7 +23,7 @@ export const prologue: Chapter<keyof Settings, keyof Characters> = {
         { message: "Well, while we're here getting to know eachother, I have a question." },
         {
             id: "new-to-vn",
-            message: "It's a game where you play through a story, and you get to make some choices to influence it. Let's practice!",
+            message: "It's a game where you play through a story, making choices that influence the plot. It's a little like those old choose-your-own adventure books. Let's practice making some choices!",
             condition: { type: "selectedOption", option: "prologue.intro.played-vn.no" }
           },
         {
@@ -37,22 +37,27 @@ export const prologue: Chapter<keyof Settings, keyof Characters> = {
             { id: "yellow", value: "yellow" },
             { id: "purple", value: "purple" },
             { id: "idk", message: "Uhh... I don't know.", value: "idk", skipToDialogId: "idk" },
+            { id: "other", message: "What?? My color isn't listed!", value: "other", skipToDialogId: "wheres-my-color"},
           ]
         },
         { message: "That's cool. I also like {choice.prologue.intro.fav-color}!" },
         { message: "But I like purple more.", condition: { type: "notSelectedOption", option: "prologue.intro.fav-color.purple" } },
         { message: "In fact, that's my favorite color!", condition: { type: "selectedOption", option: "prologue.intro.fav-color.purple" } },
+        { id: "wheres-my-color", message: "Look, we can't have everything sometimes. It's a limitation of the format.", condition: { type: "selectedOption", option: "prologue.intro.fav-color.other" } },
         { message: "Anyway, let's continue." },
         { id: "idk", message: "I guess that one isn't easy for everybody. I'll ask you something else.", condition: { type: "selectedOption", option: "prologue.intro.fav-color.idk" } },
         { message: "This next one should be really easy." },
         {
-          message: "What's 1 + 1?", choice: [
+          id: "simple-math",
+          message: "What's 1 + 1?",
+          choice: [
             { value: "2", skipToDialogId: "2" },
-            { value: "10" },
+            { value: "10", id: "binary" },
             { value: "11" },
           ]
         },
-        { message: "No need to be so clever." },
+        { message: "01000101 01111000 01100011 01110101 01110011 01100101 00100000 01101101 01100101 00101100 00100000 01100001 01110010 01100101 00100000 01111001 01101111 01110101 00100000 01100001 00100000 01110010 01101111 01100010 01101111 01110100 00111111", condition: { type: "selectedOption", option: "prologue.intro.simple-math.binary" } },
+        { message: "Look, there's no need to be so clever." },
         { message: "I know you know what answer I'm looking for." },
         {
           message: "What's 1 + 1?",
