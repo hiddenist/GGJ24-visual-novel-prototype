@@ -87,7 +87,7 @@ export class Engine<
     public selectOption(option: Option) {
         this.logOptionSelected(option);
         this.logHistory(option.text, this.saveData.userProfile.name);
-        this.getNextDialog(option.nextDialogId ?? this.currentDialog.nextDialogId);
+        this.getNextDialog(option.skipToDialogId ?? this.currentDialog.nextDialogId);
         this.startDialog();
     }
 
@@ -101,7 +101,6 @@ export class Engine<
     }
 
     public next() {
-        // todo: if we're at the end of the messages, display options
         this.getNextMessage();
         this.showMessage(this.currentMessage);
     }
@@ -154,7 +153,7 @@ export class Engine<
         do {
             this.currentDialog.messages.shift();
             if (!this.currentMessage) {
-                this.getNextDialog();
+                this.endCurrentDialog();
                 return;
             }
         } while (!this.isConditionMet(this.currentMessage, messageId));
@@ -186,8 +185,15 @@ export class Engine<
     }
 
     private handleTextReplacements(text: string) {
-        // todo
-        return text;
+        return text.replace(/{(profile|choice).([\w.-]+)}/g,  (_, section: "profile" | "choice", key) => {
+            switch (section) {
+                case "profile":
+                    return this.saveData.userProfile[key as keyof SaveData["userProfile"]] ?? "???";
+                case "choice":
+                    console.log(this.saveData.choices);
+                    return this.saveData.choices[key as keyof SaveData["choices"]] ?? "???";
+            }
+        });
     }
 
     private logMessageSeen(message: Message) {
@@ -203,6 +209,7 @@ export class Engine<
             const path = this.getDialogPath();
             if (!path) throw new Error("Dialog path is not available.");
             this.saveData.selectedOptions.push(`${path}.${option.id}`);
+            this.saveData.choices[path] = option.text;
         }
     }
 

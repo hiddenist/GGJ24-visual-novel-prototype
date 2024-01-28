@@ -23,13 +23,11 @@ a:hover {
 }
 
 body {
-  margin: 0;
   display: flex;
-  flex-direction: column;
-  place-items: center;
-  justify-items: center;
-  text-align: center;
-  min-width: 320px;
+  margin: 0;
+  padding: 0;
+  place-items: stretch;
+  min-width: 100vw;
   min-height: 100vh;
 }
 
@@ -72,4 +70,5 @@ button:focus-visible {
 
 #root {
   flex: 1;
+  justify-self: stretch;
 }

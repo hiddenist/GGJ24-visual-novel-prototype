@@ -7,20 +7,27 @@ interface StartScreenProps {
 
 export const StartScreen: React.FC<StartScreenProps> = ({ setPlayerName }) => {
   const [name, setName] = React.useState<string>()
+  const onSubmit = () => {
+    name && setPlayerName(name)
+  }
   return (
-    <div className="start-screen">
+    <form className="start-screen" onSubmit={(e) => {
+      e.preventDefault()
+      onSubmit()
+    }}>
       <h1>{t("What's your name?")}</h1>
-      <input type="text" onChange={(e) => {
-        setName(e.target.value)
-      }} />
+      <input
+        type="text"
+        onChange={(e) => {
+          setName(e.target.value)
+        }}
+      />
       <button
         disabled={!name}
-        onClick={() => {
-          name && setPlayerName(name)
-        }}
+        onClick={onSubmit}
       >
         {t("Start (button)")}
       </button>
-    </div>
+    </form>
   )
 }

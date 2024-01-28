@@ -1,31 +1,27 @@
 import React from "react"
 import "./Game.css"
-import { DialogEventType, Engine } from "../../engine/Engine"
+import { DialogEventType } from "../../engine/Engine"
 import { MessageDisplay, Option } from "../../types"
+import { useGameStore } from "../useGameStore"
+import { FastForwardIcon } from "../icons/FastForwardIcon"
 
-interface GameProps {
-  engine: Engine
-}
+interface GameProps {}
 
-export const Game: React.FC<GameProps> = ({ engine }) => {
+export const Game: React.FC<GameProps> = () => {
+  const { engine } = useGameStore()
   React.useEffect(() => {
-    engine.subscribe(DialogEventType.StartChapter, () => {
-      console.log(engine)
-    })
-    engine.subscribe(DialogEventType.StartScene, () => {
-      console.log(engine)
-    })
     engine.start()
   }, [engine])
   return (
-    <SceneBackground engine={engine}>
-      <MessageBox engine={engine} />
-      <Options engine={engine} />
+    <SceneBackground>
+      <MessageBox />
+      <Options />
     </SceneBackground>
   )
 }
 
-const SceneBackground: React.FC<React.PropsWithChildren<{ engine: Engine }>> = ({ engine, children }) => {
+const SceneBackground: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const { engine } = useGameStore()
   const [background, setBackground] = React.useState<string>()
 
   React.useEffect(() => {
@@ -35,41 +31,88 @@ const SceneBackground: React.FC<React.PropsWithChildren<{ engine: Engine }>> = (
   }, [engine])
 
   return (
-    <div className="scene-background" style={{ backgroundImage: `url(${background})` }}>
-      (background: {background})
+    <div className="scene" style={{ backgroundImage: `url(${background})` }}>
       {children}
     </div>
   )
 }
 
-const MessageBox: React.FC<{ engine: Engine }> = ({ engine  }) => {
+const MessageBox: React.FC<unknown> = () => {
+  const { engine, isWaitingForInput, configuration: { textSpeedWpm } } = useGameStore()
   const [message, setMessage] = React.useState<MessageDisplay>()
+  const [isMessageFinished, setIsMessageFinished] = React.useState(false)
 
   React.useEffect(() => {
     engine.subscribe(DialogEventType.DisplayMessage, (message) => {
       setMessage(message)
+      setIsMessageFinished(false)
     })
   }, [engine])
 
+  const isNextDisabled = isWaitingForInput || !isMessageFinished
+
+  if (!message) return null
+
   return (
-    <div className="message-box" onClick={() => {
-      // todo: we shouldn't show this when there are options
-      engine.next()
+    <div className="message-box" asia-disabled={isNextDisabled.toString()} onClick={() => {
+      !isNextDisabled && engine.next()
     }}>
-      <div className="speaker">{message?.speaker}</div>
-      <div className="message">{message?.text}</div>
+      {message?.speaker && <div className="speaker">{message.speaker}</div>}
+
+      <div>
+        {message && <MessageText text={message.text} textSpeed={Math.ceil(1000 / (textSpeedWpm/60 * 5))} onFinish={() => setIsMessageFinished(true)} />}
+        &emsp;
+        {!isNextDisabled && <FastForwardIcon />}
+      </div>
     </div>
   )
 }
 
-const Options: React.FC<{ engine: Engine }> = ({ engine  }) => {
+const MessageText: React.FC<{ text: string, textSpeed?: number, onFinish?: () => void }> = ({ text, textSpeed = 50, onFinish }) => {
+  const [textToDisplay, setTextToDisplay] = React.useState<string>("")
+  const ref = React.useRef<{
+    interval?: number,
+    onFinish: typeof onFinish,
+    position: number
+  }>({
+    position: 0,
+    onFinish,
+  })
+
+  React.useEffect(() => {
+    clearInterval(ref.current.interval)
+    const interval = setInterval(() => {
+      setTextToDisplay(text.slice(0, ref.current.position))
+      ref.current.position++
+      if (ref.current.position > text.length) {
+        clearInterval(ref.current.interval)
+        ref.current.position = 0
+        ref.current.onFinish?.()
+      }
+    }, textSpeed)
+    ref.current.interval = interval
+    return () => {
+      clearInterval(interval)
+    }
+  }, [text, textSpeed])
+
+  return (
+    <span className="text">
+      {textToDisplay}
+    </span>
+  )
+}
+
+const Options: React.FC<unknown> = () => {
+  const { engine, setIsWaitingForInput } = useGameStore()
   const [options, setOptions] = React.useState<Option[]>([])
 
   React.useEffect(() => {
     engine.subscribe(DialogEventType.DisplayOptions, (options) => {
       setOptions(options)
+      setIsWaitingForInput(true)
     })
-  }, [engine])
+  }, [engine, setIsWaitingForInput])
 
   return (
     <ul className="options">
@@ -77,6 +120,7 @@ const Options: React.FC<{ engine: Engine }> = ({ engine  }) => {
         <li key={index}>
           <button onClick={() => {
             engine.selectOption(option)
+            setIsWaitingForInput(false)
             setOptions([])
           }}>{option.text}</button>
         </li>

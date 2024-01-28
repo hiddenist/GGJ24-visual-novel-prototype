@@ -22,6 +22,7 @@ export interface Scene<
 
 export interface Place {
     background: string
+    _attribution?: string
 }
 
 export interface Dialog<
@@ -60,7 +61,7 @@ export type Condition =
 export interface Option {
     id?: string
     text: string
-    nextDialogId?: string
+    skipToDialogId?: string
 }
 
 export interface Character {

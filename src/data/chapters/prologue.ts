@@ -13,41 +13,50 @@ export const prologue: Chapter<keyof Settings, keyof Characters> = {
         {
           messages: [
             {
-              text:  "Hi ${data.userProfile.name}! Welcome to the game!",
-              character: { characterId: "narrator", imageKey: null }
+              // todo: this no worky:
+              text:  "Hi {profile.name}! Welcome to the game!",
+              // todo: this no worky either:
+              character: { characterId: "narrator", imageKey: null } // Should I just have the character specified any time it changes? That might get weird with conditional messages.
             },
-            { text: "This is the first message of the game!" }
-          ]
-        },
-        {
-          messages: [
-            { text: "This is the second message of the game!" }
           ]
         },
         {
           id: "fav-color",
           messages: [
-            { text: "You will have to make choices." },
-            { text: "What's your favorite color?" }
+            { text: "This is a game where you'll get to make some choices. Let's practice!" },
+            {
+              text: "What's your favorite color?",
+              // todo: undo some dumb:
+              // options: [
+              //   { id: "red", text: "Red" },
+              //   { id: "blue", text: "Blue" },
+              //   { id: "green", text: "Green" },
+              //   { id: "yellow", text: "Yellow" },
+              //   { id: "purple", text: "Purple" }
+              // ]
+            }
           ],
           options: [
             { id: "red", text: "Red" },
             { id: "blue", text: "Blue" },
             { id: "green", text: "Green" },
             { id: "yellow", text: "Yellow" },
-            { id: "purple", text: "Purple" }
+            { id: "purple", text: "Purple" },
+            // { id: "idk", text: "I don't know", skipToMessageId: "idk" },
           ]
         },
         {
           messages: [
-            { text: "That's cool. I also like ${data.choices['prologue.intro.fav-color']}" },
-            { text: "But I like blue more.", condition: { type: "notSelectedOption", option: "prologue.intro.fav-color.blue" } },
+            { text: "That's cool. I also like {choice.prologue.intro.fav-color}" },
+            { text: "But I like purple more.", condition: { type: "notSelectedOption", option: "prologue.intro.fav-color.purple" } },
+            { text: "In fact, that's my favorite color!", condition: { type: "selectedOption", option: "prologue.intro.fav-color.purple" } },
             { text: "Anyway, let's continue." },
-            { text: "You will have to make more choices." },
+            // { id: "idk", text: "I guess that one isn't easy for everybody. I'll ask you something else.", condition: { type: "selectedOption", option: "prologue.intro.fav-color.idk" } },
+            { text: "This next one should be really easy." },
             { text: "What's 1 + 1?" }
           ],
           options: [
-            { text: "2", nextDialogId: "2" },
+            { text: "2", skipToDialogId: "2" },
             { text: "10"},
             { text: "11" },
           ]
@@ -55,7 +64,7 @@ export const prologue: Chapter<keyof Settings, keyof Characters> = {
         {
           messages: [
             { text: "No need to be so clever." },
-            { text: "I know you know what I'm looking for." },
+            { text: "I know you know what answer I'm looking for." },
             { text: "What's 1 + 1?" }
           ],
           options: [
@@ -70,7 +79,7 @@ export const prologue: Chapter<keyof Settings, keyof Characters> = {
         },
         {
           messages: [
-            { text: "ok bye." },
+            { text: "Thank for stopping by." },
           ],
         }
       ]
