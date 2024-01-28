@@ -9,13 +9,25 @@
 
 .scene {
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
+    place-content: flex-end;
     width: 100%;
     height: 100%;
     flex: 1;
     background-position: center;
     background-size: auto 100%;
     background-repeat: no-repeat;
+}
+
+.options {
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 1em;
 }
 
 .message-box {
@@ -25,11 +37,14 @@
     justify-content: center;
     gap: 1em;
     padding: 1em;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(114, 180, 241, 0.5);
     border-radius: 8px;
     color: #ffffff;
+    font-size: 1.3rem;
     text-align: center;
     margin: 2em;
+    cursor: pointer;
 }
 
 .message-box svg.icon {
@@ -41,7 +56,14 @@
 }
 
 .message-box svg.icon.next {
+    opacity: 1;
     animation: next 2s infinite ease-in-out;
+    transition: opacity 0.25s;
+}
+
+.message-box svg.icon.next.hide {
+    animation: none;
+    opacity: 0;
 }
 
 @keyframes  next {

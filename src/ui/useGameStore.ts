@@ -7,8 +7,6 @@ import { characters } from "../data/characters"
 
 export interface GameStore {
   engine: Engine
-  isWaitingForInput: boolean
-  setIsWaitingForInput: (isWaitingForInput: boolean) => void
   isPlayerNameSet: boolean
   setPlayerName: (name: string) => void
 
@@ -31,6 +29,4 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ isPlayerNameSet: true })
   },
   isPlayerNameSet: false,
-  isWaitingForInput: false, 
-  setIsWaitingForInput: (isWaitingForInput: boolean) => set({ isWaitingForInput }),
 }))

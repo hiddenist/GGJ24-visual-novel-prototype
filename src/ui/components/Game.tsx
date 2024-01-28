@@ -1,11 +1,11 @@
 import React from "react"
 import "./Game.css"
 import { DialogEventType } from "../../engine/Engine"
-import { MessageDisplay, Option } from "../../types"
+import { MessageDisplay, OptionDisplay } from "../../types"
 import { useGameStore } from "../useGameStore"
 import { FastForwardIcon } from "../icons/FastForwardIcon"
 
-interface GameProps {}
+interface GameProps { }
 
 export const Game: React.FC<GameProps> = () => {
   const { engine } = useGameStore()
@@ -15,7 +15,6 @@ export const Game: React.FC<GameProps> = () => {
   return (
     <SceneBackground>
       <MessageBox />
-      <Options />
     </SceneBackground>
   )
 }
@@ -38,91 +37,124 @@ const SceneBackground: React.FC<React.PropsWithChildren> = ({ children }) => {
 }
 
 const MessageBox: React.FC<unknown> = () => {
-  const { engine, isWaitingForInput, configuration: { textSpeedWpm } } = useGameStore()
+  const { engine, configuration: { textSpeedWpm } } = useGameStore()
   const [message, setMessage] = React.useState<MessageDisplay>()
   const [isMessageFinished, setIsMessageFinished] = React.useState(false)
+  const messageRef = React.useRef<MessageTextRef>(null)
+  const [isEnd, setIsEnd] = React.useState(false)
+
+  const [options, setOptions] = React.useState<OptionDisplay[]>()
+
 
   React.useEffect(() => {
-    engine.subscribe(DialogEventType.DisplayMessage, (message) => {
+    engine.subscribe(DialogEventType.DisplayMessage, ({ message, dialog }) => {
       setMessage(message)
+      setIsEnd(dialog.isEnd ?? false)
       setIsMessageFinished(false)
     })
   }, [engine])
 
-  const isNextDisabled = isWaitingForInput || !isMessageFinished
+  const isNextDisabled = (!isMessageFinished && options !== undefined) && isEnd
 
   if (!message) return null
 
   return (
-    <div className="message-box" asia-disabled={isNextDisabled.toString()} onClick={() => {
-      !isNextDisabled && engine.next()
-    }}>
-      {message?.speaker && <div className="speaker">{message.speaker}</div>}
+    <>
+      {isMessageFinished && message.options && (
+        <Options
+          options={message.options}
+          onSelect={(option) => {
+            engine.selectOption(option)
+            setOptions(undefined)
+          }}
+        />
+      )}
+      <div className="message-box" asia-disabled={isNextDisabled.toString()} onClick={() => {
+        if (!isMessageFinished) {
+          messageRef.current?.finish()
+          return
+        }
+        !isNextDisabled && engine.next()
+      }}>
+        {message?.speaker && <div className="speaker">{message.speaker}</div>}
 
-      <div>
-        {message && <MessageText text={message.text} textSpeed={Math.ceil(1000 / (textSpeedWpm/60 * 5))} onFinish={() => setIsMessageFinished(true)} />}
-        &emsp;
-        {!isNextDisabled && <FastForwardIcon />}
+        <div>
+          {message && (
+            <MessageText
+              ref={messageRef}
+              text={message.displayText} textSpeed={Math.ceil(1000 / (textSpeedWpm / 60 * 5))}
+              onFinish={() => {
+                setIsMessageFinished(true)
+              }}
+            />
+          )}
+          &emsp;
+          {!isNextDisabled && <FastForwardIcon className={isMessageFinished ? "" : "hide"} />}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
-const MessageText: React.FC<{ text: string, textSpeed?: number, onFinish?: () => void }> = ({ text, textSpeed = 50, onFinish }) => {
-  const [textToDisplay, setTextToDisplay] = React.useState<string>("")
-  const ref = React.useRef<{
-    interval?: number,
-    onFinish: typeof onFinish,
-    position: number
-  }>({
-    position: 0,
-    onFinish,
-  })
-
-  React.useEffect(() => {
-    clearInterval(ref.current.interval)
-    const interval = setInterval(() => {
-      setTextToDisplay(text.slice(0, ref.current.position))
-      ref.current.position++
-      if (ref.current.position > text.length) {
-        clearInterval(ref.current.interval)
-        ref.current.position = 0
-        ref.current.onFinish?.()
-      }
-    }, textSpeed)
-    ref.current.interval = interval
-    return () => {
-      clearInterval(interval)
-    }
-  }, [text, textSpeed])
-
-  return (
-    <span className="text">
-      {textToDisplay}
-    </span>
-  )
+interface MessageTextRef {
+  finish: () => void
 }
 
-const Options: React.FC<unknown> = () => {
-  const { engine, setIsWaitingForInput } = useGameStore()
-  const [options, setOptions] = React.useState<Option[]>([])
-
-  React.useEffect(() => {
-    engine.subscribe(DialogEventType.DisplayOptions, (options) => {
-      setOptions(options)
-      setIsWaitingForInput(true)
+const MessageText = React.forwardRef<
+  MessageTextRef,
+  { text: string, textSpeed?: number, onFinish?: () => void }
+>(
+  function MessageText(
+    { text, textSpeed = 50, onFinish }, ref
+  ) {
+    const [textToDisplay, setTextToDisplay] = React.useState<string>("")
+    const stableRef = React.useRef<{
+      interval?: number,
+      onFinish: typeof onFinish,
+      position: number
+    }>({
+      position: 0,
+      onFinish,
     })
-  }, [engine, setIsWaitingForInput])
 
+    React.useImperativeHandle(ref, () => ({
+      finish: () => {
+        setTextToDisplay(text)
+        stableRef.current.position = text.length
+      }
+    }), [text])
+
+    React.useEffect(() => {
+      clearInterval(stableRef.current.interval)
+      const interval = setInterval(() => {
+        setTextToDisplay(text.slice(0, stableRef.current.position))
+        stableRef.current.position++
+        if (stableRef.current.position > text.length) {
+          clearInterval(stableRef.current.interval)
+          stableRef.current.position = 0
+          stableRef.current.onFinish?.()
+        }
+      }, textSpeed)
+      stableRef.current.interval = interval
+      return () => {
+        clearInterval(interval)
+      }
+    }, [text, textSpeed])
+
+    return (
+      <span className="text">
+        {textToDisplay}
+      </span>
+    )
+  }
+)
+
+const Options: React.FC<{ options: OptionDisplay[], onSelect: (option: OptionDisplay) => void }> = ({ options, onSelect }) => {
   return (
     <ul className="options">
-      {options && options.map((option, index) => (
+      {options.map((option, index) => (
         <li key={index}>
-          <button onClick={() => {
-            engine.selectOption(option)
-            setIsWaitingForInput(false)
-            setOptions([])
-          }}>{option.text}</button>
+          <button onClick={() => { onSelect(option) }}>{option.displayText}</button>
         </li>
       ))}
     </ul>

@@ -1,4 +1,4 @@
-import { Chapter, Character, Place, SaveData, Scene, Dialog, DialogPath, Option, Message, ConditionalWithId } from "../types";
+import { Chapter, Character, Place, SaveData, Scene, Dialog, DialogPath, Option, ConditionalWithId, MessageDisplay, OptionDisplay } from "../types";
 
 // Chapter 
 //  => Scene 
@@ -20,12 +20,12 @@ export class Engine<
         history: [],
     };
     private chapters: Chapter<SettingId, CharacterId>[];
+    private isWaitingForResponse = false;
 
     private subscriptions: { [Event in DialogEventType]: DialogEventCallback<Event>[] } = {
         startScene: [],
         startChapter: [],
         displayMessage: [],
-        displayOptions: [],
     }
 
     constructor(
@@ -40,7 +40,7 @@ export class Engine<
         this.subscriptions[event].push(callback);
     }
 
-    public unsubsribe<Event extends DialogEventType>(event: Event, callback: DialogEventCallback<Event>) {
+    public unsubscribe<Event extends DialogEventType>(event: Event, callback: DialogEventCallback<Event>) {
         const index = this.subscriptions[event].indexOf(callback);
         if (index !== -1) this.subscriptions[event].splice(index, 1);
     }
@@ -74,35 +74,27 @@ export class Engine<
         return dialog;
     }
 
-    public get currentMessage() {
-        const message = this.currentDialog.messages[0];
-        return message;
-    }
-
     private getDialogPath(): DialogPath | null{
         if (!this.currentChapter || !this.currentScene || !this.currentDialog) return null;
         return `${this.currentChapter.id}.${this.currentScene.id}.${this.currentDialog.id}`;
     }
 
-    public selectOption(option: Option) {
+    public selectOption(option: OptionDisplay) {
         this.logOptionSelected(option);
-        this.logHistory(option.text, this.saveData.userProfile.name);
+        this.logHistory(option.displayText, this.saveData.userProfile.name);
+        this.isWaitingForResponse = false;
+
         this.getNextDialog(option.skipToDialogId ?? this.currentDialog.nextDialogId);
         this.startDialog();
     }
 
-    public endCurrentDialog() {
-        if (this.currentDialog.options) {
-            this.emit(DialogEventType.DisplayOptions, this.currentDialog.options);
-        } else {
-            this.getNextDialog(this.currentDialog?.nextDialogId);
-            this.startDialog();
-        }
-    }
-
     public next() {
-        this.getNextMessage();
-        this.showMessage(this.currentMessage);
+        console.log("next", { isWaitingForResponse: this.isWaitingForResponse })
+        if (this.isWaitingForResponse) {
+            return;
+        }
+        this.getNextDialog();
+        this.startDialog();
     }
 
     private getNextChapter(chapterId?: Chapter["id"]) {
@@ -146,19 +138,6 @@ export class Engine<
         } while (!this.isConditionMet(this.currentDialog, dialogId));
     }
 
-    private getNextMessage(messageId?: Message["id"]) {
-        if (messageId && !this.currentDialog.messages.find(message => message.id === messageId)) {
-            throw new Error(`Message with id ${messageId} does not exist in this dialog.`);
-        }
-        do {
-            this.currentDialog.messages.shift();
-            if (!this.currentMessage) {
-                this.endCurrentDialog();
-                return;
-            }
-        } while (!this.isConditionMet(this.currentMessage, messageId));
-    }
-
     private startChapter() {
         this.emit(DialogEventType.StartChapter, this.currentChapter);
     }
@@ -168,39 +147,48 @@ export class Engine<
     }
 
     private startDialog() {
-        this.showMessage(this.currentMessage);
+        this.showMessage(this.currentDialog);
     }
 
-    private showMessage(message: Message<CharacterId>) {
-        const characterId = message.character?.characterId;
+    private showMessage(dialog: Dialog<CharacterId>) {
+        const characterId = dialog.character?.characterId;
         const character = characterId && this.characters[characterId];
-        const messageDisplay = {
-            text: this.handleTextReplacements(message.text),
-            characterName: character?.name,
-            characterImage: message.character?.imageKey && character?.images[message.character.imageKey],
+        const message: MessageDisplay = {
+            displayText: this.handleTextReplacements(dialog.message),
+            speaker: character?.name,
+            foregroundImage: dialog.character?.imageKey && character?.images[dialog.character.imageKey],
+            options: dialog.choice?.map(option => ({
+                ...option,
+                displayText: this.handleTextReplacements(option.message ?? option.value.toString()),
+            })),
         }
-        this.emit(DialogEventType.DisplayMessage, messageDisplay);
-        this.logMessageSeen(message);
-        this.logHistory(messageDisplay.text, messageDisplay.characterName);
+        this.emit(DialogEventType.DisplayMessage, { dialog, message });
+        if (dialog.choice?.length) {
+            this.isWaitingForResponse = true;
+        } else {
+            console.log("no options", dialog);
+        }
+        this.logMessageSeen();
+        this.logHistory(message.displayText, message.speaker);
     }
 
     private handleTextReplacements(text: string) {
-        return text.replace(/{(profile|choice).([\w.-]+)}/g,  (_, section: "profile" | "choice", key) => {
+        const result = text.replace(/{(profile|choice).([\w.-]+)}/g,  (_, section: "profile" | "choice", key) => {
             switch (section) {
                 case "profile":
                     return this.saveData.userProfile[key as keyof SaveData["userProfile"]] ?? "???";
                 case "choice":
                     console.log(this.saveData.choices);
-                    return this.saveData.choices[key as keyof SaveData["choices"]] ?? "???";
+                    return this.saveData.choices[key as keyof SaveData["choices"]]?.toString() ?? "???";
             }
         });
+        return result;
     }
 
-    private logMessageSeen(message: Message) {
-        if (message.id) {
-            const path = this.getDialogPath();
-            if (!path) throw new Error("Dialog path is not available.");
-            this.saveData.seenMessages.push(`${path}.${message.id}`);
+    private logMessageSeen() {
+        const path = this.getDialogPath();
+        if (path) {
+            this.saveData.seenMessages.push(path);
         }
     }
 
@@ -209,7 +197,7 @@ export class Engine<
             const path = this.getDialogPath();
             if (!path) throw new Error("Dialog path is not available.");
             this.saveData.selectedOptions.push(`${path}.${option.id}`);
-            this.saveData.choices[path] = option.text;
+            this.saveData.choices[path] = option.value;
         }
     }
 
@@ -241,14 +229,12 @@ export enum DialogEventType {
     StartChapter = "startChapter",
     StartScene = "startScene",
     DisplayMessage = "displayMessage",
-    DisplayOptions = "displayOptions",
 }
 
 export interface DialogEventMap {
     [DialogEventType.StartChapter]: Chapter
     [DialogEventType.StartScene]: { scene: Scene, place: Place }
-    [DialogEventType.DisplayMessage]: Omit<Message, "text"> & { text: string }
-    [DialogEventType.DisplayOptions]: Option[]
+    [DialogEventType.DisplayMessage]: { message: MessageDisplay, dialog: Dialog }
 }
 
 export type DialogEventCallback<Event extends DialogEventType> = (data: DialogEventMap[Event], engine: Engine, ) => void;

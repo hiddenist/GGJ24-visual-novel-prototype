@@ -26,41 +26,47 @@ export interface Place {
 }
 
 export interface Dialog<
-    CharacterId extends string = string,
+    CharacterId extends string = string
 > extends ConditionalWithId {
-    messages: Message<CharacterId>[]
-    options?: Option[]
+    choice?: Option[]
     nextDialogId?: string
+    
+    message: string
+    
     isEnd?: true
-}
-
-export interface Message<
-    CharacterId extends string = string,
-> extends ConditionalWithId  {
-    text: string
     seen?: boolean
     character?: { characterId: CharacterId, imageKey: string | null }
 }
 
 export interface MessageDisplay {
-    text: string
+    displayText: string
     speaker?: string
-    foregroundImage?: string
+    foregroundImage?: string | null
+    options?: OptionDisplay[]
 }
 
-export type DialogPath = `${Required<Chapter>["id"]}.${Required<Scene>["id"]}.${Required<Dialog>["id"]}`
-export type MessagePath = `${DialogPath}.${Required<Message>["id"]}`
-export type OptionPath = `${DialogPath}.${Required<Option>["id"]}`
+export interface OptionDisplay extends Option {
+    displayText: string
+}
+
+
+type ChapterId = Required<Chapter>["id"]
+type SceneId = Required<Scene>["id"]
+type DialogId = Required<Dialog>["id"]
+type OptionId = Required<Option>["id"]
+export type DialogPath = `${ChapterId}.${SceneId}.${DialogId}`
+export type OptionPath = `${DialogPath}.${OptionId}`
 
 export type Condition = 
-    | { type: "seenMessage", message: MessagePath }
+    | { type: "seenMessage", message: DialogPath }
     | { type: "selectedOption", option: OptionPath }
     | { type: "notSelectedOption", option: OptionPath }
-    | { type: "notSeenMessage", message: MessagePath }
+    | { type: "notSeenMessage", message: DialogPath }
 
 export interface Option {
     id?: string
-    text: string
+    message?: string
+    value: string | boolean
     skipToDialogId?: string
 }
 
@@ -70,9 +76,9 @@ export interface Character {
 }
 
 export interface SaveData {
-    choices: Record<DialogPath, Option["text"]>
+    choices: Record<DialogPath, Option["value"]>
     selectedOptions: OptionPath[]
-    seenMessages: MessagePath[]
+    seenMessages: DialogPath[]
     userProfile: UserProfile
     history: { message: string, date: Date, characterName?: string }[]
 }
