@@ -1,10 +1,10 @@
 export interface Chapter<
-    SettingId extends string = string,
+    PlaceId extends string = string,
     CharacterId extends string = string,
 > {
     id: string
     title: string
-    scenes: Scene<SettingId, CharacterId>[]
+    scenes: Scene<PlaceId, CharacterId>[]
 }
 
 export interface ConditionalWithId {
@@ -13,14 +13,14 @@ export interface ConditionalWithId {
 }
 
 export interface Scene<
-SettingId extends string = string,
-CharacterId extends string = string,
+    PlaceId extends string = string,
+    CharacterId extends string = string,
 > extends ConditionalWithId {
-    settingId: SettingId
+    placeId: PlaceId
     dialog: Dialog<CharacterId>[]
 }
 
-export interface Setting {
+export interface Place {
     background: string
 }
 
@@ -36,15 +36,15 @@ export interface Dialog<
 export interface Message<
     CharacterId extends string = string,
 > extends ConditionalWithId  {
-    text: string | ((data: SaveData) => string)
+    text: string
     seen?: boolean
     character?: { characterId: CharacterId, imageKey: string | null }
 }
 
 export interface MessageDisplay {
     text: string
-    characterName?: string
-    characterImage?: string
+    speaker?: string
+    foregroundImage?: string
 }
 
 export type DialogPath = `${Required<Chapter>["id"]}.${Required<Scene>["id"]}.${Required<Dialog>["id"]}`

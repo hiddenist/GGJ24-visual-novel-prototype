@@ -1,0 +1,13 @@
+.start-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+    gap: 1em;
+}
+
+.scene-background {
+    justify-self: center;
+    flex: 1;
+}
