@@ -12,6 +12,17 @@ export const Game: React.FC<GameProps> = () => {
   React.useEffect(() => {
     engine.start()
   }, [engine])
+  React.useEffect(() => {
+    const onContinueKeyPress = (e: KeyboardEvent) => {
+      if (e.key === " " || e.key === "Enter") {
+        engine.next()
+      }
+    }
+    window.addEventListener("keydown", onContinueKeyPress)
+    return () => {
+      window.removeEventListener("keydown", onContinueKeyPress)
+    }
+  }, [engine])
   return (
     <SceneBackground>
       <MessageBox />
@@ -54,7 +65,7 @@ const MessageBox: React.FC<unknown> = () => {
     })
   }, [engine])
 
-  const isNextDisabled = (!isMessageFinished && options !== undefined) && isEnd
+  const isNextDisabled = (!isMessageFinished && options !== undefined) || isEnd
 
   if (!message) return null
 
@@ -150,11 +161,14 @@ const MessageText = React.forwardRef<
 )
 
 const Options: React.FC<{ options: OptionDisplay[], onSelect: (option: OptionDisplay) => void }> = ({ options, onSelect }) => {
+
   return (
     <ul className="options">
       {options.map((option, index) => (
         <li key={index}>
-          <button onClick={() => { onSelect(option) }}>{option.displayText}</button>
+          <button
+            // todo: UI/UX for selected option and navigating with keyboard
+            onClick={() => { onSelect(option) }}>{option.displayText}</button>
         </li>
       ))}
     </ul>
