@@ -11,17 +11,28 @@ export interface GameStore {
   setPlayerName: (name: string) => void
 
   configuration: {
-    // isMusicEnabled: boolean
+    isMusicEnabled: boolean
     // isSoundEnabled: boolean
     // isAutoPlayEnabled: boolean
     textSpeedWpm: number
   }
+  updateConfiguration: (configuration: Partial<GameStore["configuration"]>) => void
+  toggleMusic: () => boolean
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
   engine: new Engine([ sample ], places, characters),
   configuration: {
+    isMusicEnabled: true,
     textSpeedWpm: 300,
+  },
+  updateConfiguration: (configuration) => {
+    set({ configuration: { ...get().configuration, ...configuration } })
+  },
+  toggleMusic: () => {
+    const isMusicEnabled = !get().configuration.isMusicEnabled
+    set(({ configuration }) => ({ configuration: { ...configuration, isMusicEnabled } }))
+    return isMusicEnabled
   },
   setPlayerName: (name: string) => {
     if (name.trim().length === 0) return

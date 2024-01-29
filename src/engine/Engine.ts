@@ -1,3 +1,4 @@
+import { getChapterAssets } from "../assets/getChapterAssets";
 import { Chapter, Character, Place, SaveData, Scene, Dialog, DialogPath, Option, ConditionalWithId, MessageDisplay, OptionDisplay } from "../types";
 
 // Chapter 
@@ -7,7 +8,7 @@ import { Chapter, Character, Place, SaveData, Scene, Dialog, DialogPath, Option,
 //  => Option
 
 export class Engine<
-    SettingId extends string = string,
+    PlaceId extends string = string,
     CharacterId extends string = string,
 > {
     private saveData: SaveData = {
@@ -19,7 +20,7 @@ export class Engine<
         },
         history: [],
     };
-    private chapters: Chapter<SettingId, CharacterId>[];
+    private chapters: Chapter<PlaceId, CharacterId>[];
     private isWaitingForResponse = false;
 
     private subscriptions: { [Event in DialogEventType]: DialogEventCallback<Event>[] } = {
@@ -29,8 +30,8 @@ export class Engine<
     }
 
     constructor(
-        chapters: Chapter<SettingId, CharacterId>[],
-        public readonly settings: Record<SettingId, Place>,
+        chapters: Chapter<PlaceId, CharacterId>[],
+        public readonly places: Record<PlaceId, Place>,
         public readonly characters: Record<CharacterId, Character>,
     ) {
         this.chapters = chapters;
@@ -51,12 +52,6 @@ export class Engine<
 
     public setPlayerName(name: string) {
         this.saveData.userProfile.name = name;
-    }
-
-    public start() {
-        this.startChapter();
-        this.startScene();
-        this.startDialog(); 
     }
 
     public get currentChapter() {
@@ -143,15 +138,16 @@ export class Engine<
         } while (!this.isConditionMet(this.currentDialog, dialogId));
     }
 
-    private startChapter() {
-        this.emit(DialogEventType.StartChapter, this.currentChapter);
+    public startChapter() {
+        const chapter = this.currentChapter;
+        this.emit(DialogEventType.StartChapter, { chapter, assets: getChapterAssets(chapter, this.places) });
     }
 
-    private startScene() {
-        this.emit(DialogEventType.StartScene, { scene: this.currentScene, place: this.settings[this.currentScene.placeId] });
+    public startScene() {
+        this.emit(DialogEventType.StartScene, { scene: this.currentScene, place: this.places[this.currentScene.placeId] });
     }
 
-    private startDialog() {
+    public startDialog() {
         this.showMessage(this.currentDialog);
     }
 
@@ -239,10 +235,17 @@ export enum DialogEventType {
     DisplayMessage = "displayMessage",
 }
 
+export interface Asset {
+    type: "image" | "audio"
+    src: string
+}
+
 export interface DialogEventMap {
-    [DialogEventType.StartChapter]: Chapter
+    [DialogEventType.StartChapter]: { chapter: Chapter, assets: Asset[] }
     [DialogEventType.StartScene]: { scene: Scene, place: Place }
     [DialogEventType.DisplayMessage]: { message: MessageDisplay, dialog: Dialog }
 }
 
 export type DialogEventCallback<Event extends DialogEventType> = (data: DialogEventMap[Event], engine: Engine, ) => void;
+
+

@@ -69,6 +69,7 @@ button:focus-visible {
 }
 
 #root {
+  display: grid;
   flex: 1;
   justify-self: stretch;
 }

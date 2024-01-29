@@ -1,21 +1,80 @@
 import React from "react"
 import "./Game.css"
-import { DialogEventType } from "../../engine/Engine"
+import { DialogEventCallback, DialogEventType } from "../../engine/Engine"
 import { MessageDisplay, OptionDisplay } from "../../types"
 import { useGameStore } from "../useGameStore"
 import { FastForwardIcon } from "../icons/FastForwardIcon"
+import { preloadAssets } from "../../assets/preloadAssets"
+
+import music from "../../assets/music/Leash_room_loop.mp3"
+import { VolumeOffIcon } from "../icons/VolumeOffIcon"
+import { VolumeOnIcon } from "../icons/VolumeOnIcon"
 
 interface GameProps { }
 
 export const Game: React.FC<GameProps> = () => {
   const { engine } = useGameStore()
+  const [isLoaded, setIsLoaded] = React.useState(false)
+
   React.useEffect(() => {
-    engine.start()
+    const loadChapter: DialogEventCallback<DialogEventType.StartChapter> = ({ assets }) => {
+      setIsLoaded(false)
+      Promise.all(
+        [
+          preloadAssets([ ...assets, { type: "audio", src: music }]),
+          // new Promise(resolve => setTimeout(resolve, 2000)),
+        ]
+      ).then(() => {
+        setIsLoaded(true)
+      })
+    }
+    engine.subscribe(DialogEventType.StartChapter, loadChapter)
+    engine.startChapter()
+    return () => {
+      engine.unsubscribe(DialogEventType.StartChapter, loadChapter)
+    }
   }, [engine])
+
+  if (!isLoaded) return <Loading />
+
   return (
     <SceneBackground>
       <MessageBox />
+      <MusicControls />
     </SceneBackground>
+  )
+}
+
+const Loading: React.FC<unknown> = () => {
+  return (
+    <div className="loading">
+      <div className="loading-text">Loading...</div>
+    </div>
+  )
+}
+
+const MusicControls: React.FC<unknown> = () => {
+  const { configuration: { isMusicEnabled } } = useGameStore()
+  const audioRef = React.useRef<HTMLAudioElement>(null)
+  const [isPlaying, setIsPlaying] = React.useState(isMusicEnabled)
+
+  const toggleMusicEnabled = React.useCallback(() => {
+    if (isPlaying) {
+      setIsPlaying(false)
+      audioRef.current?.pause()
+    } else {
+      setIsPlaying(true)
+      audioRef.current?.play()
+    }
+  }, [])
+
+  return (
+    <>
+      <audio src={music} loop={true} autoPlay={isMusicEnabled} ref={audioRef} />
+      <button className="music-controls" onClick={toggleMusicEnabled} aria-label={isPlaying ? "disable music" : "enable music"}>
+        {isPlaying ? <VolumeOnIcon /> : <VolumeOffIcon />}
+      </button>
+    </>
   )
 }
 
@@ -23,14 +82,19 @@ const SceneBackground: React.FC<React.PropsWithChildren> = ({ children }) => {
   const { engine } = useGameStore()
   const [background, setBackground] = React.useState<string>()
 
-  React.useEffect(() => {
-    engine.subscribe(DialogEventType.StartScene, ({ place }) => {
+  React.useLayoutEffect(() => {
+    const loadScene: DialogEventCallback<DialogEventType.StartScene> = ({ place }) => {
       setBackground(place.background)
-    })
+    }
+    engine.subscribe(DialogEventType.StartScene, loadScene);
+    engine.startScene();
+    return () => {
+      engine.unsubscribe(DialogEventType.StartScene, loadScene);
+    }
   }, [engine])
 
   return (
-    <div className="scene" style={{ backgroundImage: `url(${background})` }}>
+    <div className="scene" key={background} style={{ backgroundImage: `url(${background})` }}>
       {children}
     </div>
   )
@@ -45,15 +109,21 @@ const MessageBox: React.FC<unknown> = () => {
 
   const [options, setOptions] = React.useState<OptionDisplay[]>()
 
-  const isNextDisabled = (!isMessageFinished && options !== undefined) || isEnd
+  const isNextDisabled = !isMessageFinished || options !== undefined || isEnd
 
 
   React.useEffect(() => {
-    engine.subscribe(DialogEventType.DisplayMessage, ({ message, dialog }) => {
+    const loadMessage: DialogEventCallback<DialogEventType.DisplayMessage> = ({ message, dialog }) => {
       setMessage(message)
       setIsEnd(dialog.isEnd ?? false)
       setIsMessageFinished(false)
-    })
+      setOptions(message.options)
+    }
+    engine.subscribe(DialogEventType.DisplayMessage, loadMessage)
+    engine.startDialog()
+    return () => {
+      engine.unsubscribe(DialogEventType.DisplayMessage, loadMessage)
+    }
   }, [engine])
 
   const handleNext = React.useCallback(() => {

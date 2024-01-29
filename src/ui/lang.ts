@@ -5,7 +5,7 @@ const lang = {
         jp: "お名前は何ですか？",
     },
     "Start (button)": {
-        en: "Start",
+        en: "Let's do this!",
         pt: "Começar",
         jp: "スタート",
     },
