@@ -17,7 +17,7 @@ export interface Scene<
     CharacterId extends string = string,
 > extends ConditionalWithId {
     placeId: PlaceId
-    dialog: Dialog<CharacterId>[]
+    script: (Dialog<CharacterId> | string)[]
 }
 
 export interface Place {

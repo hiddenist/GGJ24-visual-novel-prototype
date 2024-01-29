@@ -70,7 +70,12 @@ export class Engine<
     }
 
     public get currentDialog() {
-        const dialog = this.currentScene.dialog[0];
+        const dialog = this.currentScene.script[0];
+        if (typeof dialog === "string") {
+            return {
+                message: dialog,
+            }
+        }
         return dialog;
     }
 
@@ -125,11 +130,11 @@ export class Engine<
     }
 
     private getNextDialog(dialogId?: Dialog["id"]) {
-        if (dialogId && !this.currentScene.dialog.find(dialog => dialog.id === dialogId)) {
+        if (dialogId && !this.currentScene.script.find(dialog => typeof dialog === "object" && dialog.id === dialogId)) {
             throw new Error(`Dialog with id ${dialogId} does not exist in this scene.`);
         }
         do {
-            this.currentScene.dialog.shift();
+            this.currentScene.script.shift();
             if (!this.currentDialog) {
                 this.getNextScene();
                 this.startScene();
@@ -205,7 +210,10 @@ export class Engine<
         this.saveData.history.push({ message, date: new Date(), characterName });
     }
 
-    private isConditionMet(conditional: ConditionalWithId, matchesId?: string) {
+    private isConditionMet(conditional: ConditionalWithId | string, matchesId?: string) {
+        if (typeof conditional === "string") {
+            return matchesId == null;
+        }
         if (matchesId != null && conditional.id !== matchesId) return false;
 
         const condition = conditional.condition;

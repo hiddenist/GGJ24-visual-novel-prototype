@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { Engine } from "../engine/Engine"
-import { prologue } from "../data/chapters/prologue"
+import { sample } from "../data/chapters/sample-script"
 import { places } from "../data/places"
 import { characters } from "../data/characters"
 
@@ -19,7 +19,7 @@ export interface GameStore {
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
-  engine: new Engine([ prologue ], places, characters),
+  engine: new Engine([ sample ], places, characters),
   configuration: {
     textSpeedWpm: 300,
   },

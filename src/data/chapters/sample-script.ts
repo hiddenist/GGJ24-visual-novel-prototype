@@ -2,15 +2,15 @@ import { Chapter } from "../../types"
 import type { Settings } from "../places"
 import type { Characters } from "../characters"
 
-export const prologue: Chapter<keyof Settings, keyof Characters> = {
+export const sample: Chapter<keyof Settings, keyof Characters> = {
   id: "prologue",
-  title: "Prologue",
+  title: "Sample Script",
   scenes: [
     {
       id: "intro",
       placeId: "dorm",
-      dialog: [
-        { message: "Hi {profile.name}!", },
+      script: [
+        "Hi {profile.name}!",
         {
           message: "Have you ever played a visual novel before?",
           id: "played-vn",
@@ -19,13 +19,17 @@ export const prologue: Chapter<keyof Settings, keyof Characters> = {
             { id: "no", value: false, message: "Nope. What's that?", skipToDialogId: "new-to-vn" },
           ]
         },
-        { message: "Awesome, looks like I won't have to hold your hand too much through this. I mean... unless..." },
-        { message: "Well, while we're here getting to know eachother, I have a question." },
+        "Awesome, looks like I won't have to hold your hand too much through this. I mean... unless...",
+        "Well, um, while we're here let's get to know eachother! I have a question.",
         {
-            id: "new-to-vn",
-            message: "It's a game where you play through a story, making choices that influence the plot. It's a little like those old choose-your-own adventure books. Let's practice making some choices!",
-            condition: { type: "selectedOption", option: "prologue.intro.played-vn.no" }
-          },
+          id: "new-to-vn",
+          message: "It's a game where you play through a story, making choices that influence the plot.",
+          condition: { type: "selectedOption", option: "prologue.intro.played-vn.no" }
+        },
+        {
+          message: "It's a little like those old choose-your-own adventure books. Let's practice making some choices now!",
+          condition: { type: "selectedOption", option: "prologue.intro.played-vn.no" }
+        },
         {
 
           id: "fav-color",
@@ -40,13 +44,13 @@ export const prologue: Chapter<keyof Settings, keyof Characters> = {
             { id: "other", message: "What?? My color isn't listed!", value: "other", skipToDialogId: "wheres-my-color"},
           ]
         },
-        { message: "That's cool. I also like {choice.prologue.intro.fav-color}!" },
+        "That's cool. I also like {choice.prologue.intro.fav-color}!",
         { message: "But I like purple more.", condition: { type: "notSelectedOption", option: "prologue.intro.fav-color.purple" } },
         { message: "In fact, that's my favorite color!", condition: { type: "selectedOption", option: "prologue.intro.fav-color.purple" } },
         { id: "wheres-my-color", message: "Look, we can't have everything sometimes. It's a limitation of the format.", condition: { type: "selectedOption", option: "prologue.intro.fav-color.other" } },
-        { message: "Anyway, let's continue." },
+        "Anyways, let's continue.",
         { id: "idk", message: "I guess that one isn't easy for everybody. I'll ask you something else.", condition: { type: "selectedOption", option: "prologue.intro.fav-color.idk" } },
-        { message: "This next one should be really easy." },
+        "This next one should be really easy.",
         {
           id: "simple-math",
           message: "What's 1 + 1?",
@@ -56,9 +60,12 @@ export const prologue: Chapter<keyof Settings, keyof Characters> = {
             { value: "11" },
           ]
         },
-        { message: "01000101 01111000 01100011 01110101 01110011 01100101 00100000 01101101 01100101 00101100 00100000 01100001 01110010 01100101 00100000 01111001 01101111 01110101 00100000 01100001 00100000 01110010 01101111 01100010 01101111 01110100 00111111", condition: { type: "selectedOption", option: "prologue.intro.simple-math.binary" } },
-        { message: "Look, there's no need to be so clever." },
-        { message: "I know you know what answer I'm looking for." },
+        { 
+          message: "01000101 01111000 01100011 01110101 01110011 01100101 00100000 01101101 01100101 00101100 00100000 01100001 01110010 01100101 00100000 01111001 01101111 01110101 00100000 01100001 00100000 01110010 01101111 01100010 01101111 01110100 00111111",
+          condition: { type: "selectedOption", option: "prologue.intro.simple-math.binary" }
+        },
+        "Look, there's no need to be so clever.",
+        "I know you know what answer I'm looking for.",
         {
           message: "What's 1 + 1?",
           choice: [

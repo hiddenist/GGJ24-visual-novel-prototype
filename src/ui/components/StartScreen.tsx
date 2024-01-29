@@ -18,6 +18,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({ setPlayerName }) => {
       <h1>{t("What's your name?")}</h1>
       <input
         type="text"
+        autoComplete="false"
+        autoFocus={true}
         onChange={(e) => {
           setName(e.target.value)
         }}

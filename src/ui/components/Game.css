@@ -30,11 +30,16 @@
     gap: 1em;
 }
 
+.options :focus {
+    outline: 4px auto -webkit-focus-ring-color;
+}
+
 .message-box {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    user-select: none;
     gap: 1em;
     padding: 1em;
     background-color: rgba(0, 0, 0, 0.7);
@@ -45,6 +50,11 @@
     text-align: center;
     margin: 2em;
     cursor: pointer;
+}
+
+.message-box .text {
+    display: inline-block;
+    max-width: 100ch;
 }
 
 .message-box svg.icon {
