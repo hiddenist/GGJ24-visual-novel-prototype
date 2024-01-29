@@ -2,6 +2,8 @@ import { Chapter } from "../../types"
 import type { Settings } from "../places"
 import type { Characters } from "../characters"
 
+// look into twine
+
 export const sample: Chapter<keyof Settings, keyof Characters> = {
   id: "prologue",
   title: "Sample Script",
@@ -31,7 +33,6 @@ export const sample: Chapter<keyof Settings, keyof Characters> = {
           condition: { type: "selectedOption", option: "prologue.intro.played-vn.no" }
         },
         {
-
           id: "fav-color",
           message: "What's your favorite color?",
           choice: [
@@ -61,7 +62,8 @@ export const sample: Chapter<keyof Settings, keyof Characters> = {
           ]
         },
         { 
-          message: "01000101 01111000 01100011 01110101 01110011 01100101 00100000 01101101 01100101 00101100 00100000 01100001 01110010 01100101 00100000 01111001 01101111 01110101 00100000 01100001 00100000 01110010 01101111 01100010 01101111 01110100 00111111",
+          message: 
+          "01000101 01111000 01100011 01110101 01110011 01100101 00100000 01101101 01100101 00101100 00100000 01100001 01110010 01100101 00100000 01111001 01101111 01110101 00100000 01100001 00100000 01110010 01101111 01100010 01101111 01110100 00111111",
           condition: { type: "selectedOption", option: "prologue.intro.simple-math.binary" }
         },
         "Look, there's no need to be so clever.",
@@ -73,7 +75,13 @@ export const sample: Chapter<keyof Settings, keyof Characters> = {
           ],
         },
         { id: "2", message: "That's correct!" },
-        { message: "Thanks for stopping by. That's all that's here for now.", isEnd: true },
+        {
+          message: "Thanks for stopping by. That's all that's here for now.",
+          isEnd: true,
+          choice: [
+            { value: "Bye!" },
+          ]
+        },
       ]
     }
   ]

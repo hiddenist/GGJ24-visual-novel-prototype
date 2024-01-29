@@ -18,6 +18,8 @@ export interface GameStore {
   }
   updateConfiguration: (configuration: Partial<GameStore["configuration"]>) => void
   toggleMusic: () => boolean
+  isDialogChoiceOpen: boolean
+  setIsDialogChoiceOpen: (isDialogChoiceOpen: boolean) => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -40,4 +42,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ isPlayerNameSet: true })
   },
   isPlayerNameSet: false,
+  isDialogChoiceOpen: false,
+  setIsDialogChoiceOpen: (isDialogChoiceOpen) => set({ isDialogChoiceOpen }),
 }))

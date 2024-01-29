@@ -1,10 +1,16 @@
 .start-screen {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+.start-screen form {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     justify-self: center;
     gap: 1em;
+    flex: 1;
 }
 
 .start-screen input {
@@ -26,7 +32,7 @@
     border-bottom-width: 2px;   
 }
 
-.start-screen button {
+.start-screen form button {
     opacity: 1;
     transition: opacity 1s;
     font-size: 1.5rem;
@@ -36,6 +42,43 @@
 .start-screen button:disabled {
     transition: opacity 0.3s;
     opacity: 0;
+}
+
+.start-screen .toggle-credits {
+    margin: 2rem auto;
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+.start-screen .credits {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4rem;
+}
+
+.start-screen .credits ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    padding: 1.5em;
+    border-radius: 1em;
+    
+    background-color: #1d1d1dee;
+}
+
+.start-screen .credits ul {
+    text-align: left;
 }
 
 .loading {
@@ -105,7 +148,7 @@
 
 }
 
-.options button:focus, .options button:hover {
+.options button:focus-visible, .options button:hover {
     outline: 4px auto -webkit-focus-ring-color;
     color: white;
     background-color: rgb(2, 49, 97);

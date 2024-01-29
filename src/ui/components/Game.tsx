@@ -54,7 +54,7 @@ const Loading: React.FC<unknown> = () => {
 }
 
 const MusicControls: React.FC<unknown> = () => {
-  const { configuration: { isMusicEnabled } } = useGameStore()
+  const { configuration: { isMusicEnabled }, isDialogChoiceOpen } = useGameStore()
   const audioRef = React.useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = React.useState(isMusicEnabled)
 
@@ -66,12 +66,12 @@ const MusicControls: React.FC<unknown> = () => {
       setIsPlaying(true)
       audioRef.current?.play()
     }
-  }, [])
+  }, [isPlaying])
 
   return (
     <>
       <audio src={music} loop={true} autoPlay={isMusicEnabled} ref={audioRef} />
-      <button className="music-controls" onClick={toggleMusicEnabled} aria-label={isPlaying ? "disable music" : "enable music"}>
+      <button className="music-controls" onClick={toggleMusicEnabled} aria-label={isPlaying ? "disable music" : "enable music"} tabIndex={isDialogChoiceOpen ? -1 : 0}>
         {isPlaying ? <VolumeOnIcon /> : <VolumeOffIcon />}
       </button>
     </>
@@ -101,10 +101,11 @@ const SceneBackground: React.FC<React.PropsWithChildren> = ({ children }) => {
 }
 
 const MessageBox: React.FC<unknown> = () => {
-  const { engine, configuration: { textSpeedWpm } } = useGameStore()
+  const { engine, configuration: { textSpeedWpm }, setIsDialogChoiceOpen } = useGameStore()
   const [message, setMessage] = React.useState<MessageDisplay>()
   const [isMessageFinished, setIsMessageFinished] = React.useState(false)
   const messageRef = React.useRef<MessageTextRef>(null)
+  const messageBoxRef = React.useRef<HTMLDivElement>(null)
   const [isEnd, setIsEnd] = React.useState(false)
 
   const [options, setOptions] = React.useState<OptionDisplay[]>()
@@ -131,8 +132,11 @@ const MessageBox: React.FC<unknown> = () => {
       messageRef.current?.finish()
       return
     }
+    if (isEnd) {
+      window.location.reload()
+    }
     !isNextDisabled && engine.next()
-  }, [isMessageFinished, isNextDisabled, engine])
+  }, [isMessageFinished, isNextDisabled, engine, isEnd])
 
   React.useEffect(() => {
     const onContinueKeyPress = (e: KeyboardEvent) => {
@@ -146,11 +150,18 @@ const MessageBox: React.FC<unknown> = () => {
     }
   }, [handleNext])
 
+  
+
+  const isDialogChoiceOpen = isMessageFinished && message?.options
+  React.useEffect(() => {
+    setIsDialogChoiceOpen(Boolean(isDialogChoiceOpen))
+  }, [setIsDialogChoiceOpen, isDialogChoiceOpen])
+
   if (!message) return null
 
   return (
     <>
-      {isMessageFinished && message.options && (
+      {isDialogChoiceOpen && message.options && (
         <Options
           options={message.options}
           onSelect={(option) => {
@@ -159,7 +170,7 @@ const MessageBox: React.FC<unknown> = () => {
           }}
         />
       )}
-      <div className="message-box" asia-disabled={isNextDisabled.toString()} onClick={handleNext}>
+      <div tabIndex={isDialogChoiceOpen ? -1 : 0} className="message-box" asia-disabled={isNextDisabled.toString()} onClick={handleNext} ref={messageBoxRef}>
         {message?.speaker && <div className="speaker">{message.speaker}</div>}
 
         <div>
@@ -169,6 +180,9 @@ const MessageBox: React.FC<unknown> = () => {
               text={message.displayText} textSpeed={Math.ceil(1000 / (textSpeedWpm / 60 * 5))}
               onFinish={() => {
                 setIsMessageFinished(true)
+                if (!options) {
+                  messageBoxRef.current?.focus()
+                }
               }}
             />
           )}
@@ -234,12 +248,43 @@ const MessageText = React.forwardRef<
 )
 
 const Options: React.FC<{ options: OptionDisplay[], onSelect: (option: OptionDisplay) => void }> = ({ options, onSelect }) => {
+  const optionsRef = React.useRef<HTMLUListElement>(null)
+  const focusedIndexRef = React.useRef<number>(0)
+
+  React.useEffect(() => {
+    optionsRef.current?.getElementsByTagName("button")[0]?.focus()
+    focusedIndexRef.current = 0
+  }, [options])
+
+  React.useEffect(() => {
+    const setFocus = (adjustBy: number) => { 
+      focusedIndexRef.current = (focusedIndexRef.current + adjustBy) % options.length
+      optionsRef.current?.getElementsByTagName("button")[focusedIndexRef.current]?.focus()
+    }
+    const onKeyPress = (e: KeyboardEvent) => {
+      if (["ArrowDown", "ArrowRight"].includes(e.key)) {
+        e.preventDefault()
+        setFocus(1)
+      } else if (["ArrowUp", "ArrowLeft"].includes(e.key)) {
+        e.preventDefault()
+        setFocus(-1)
+      } else if (e.key === "Tab") {
+        e.preventDefault()
+        setFocus(e.shiftKey ? -1 : 1)
+      }
+    }
+    window.addEventListener("keydown", onKeyPress)
+    return () => {
+      window.removeEventListener("keydown", onKeyPress)
+    }
+  }, [options.length])
 
   return (
-    <ul className="options">
+    <ul className="options" ref={optionsRef}>
       {options.map((option, index) => (
         <li key={index}>
           <button
+            tabIndex={index + 1}
             // todo: UI/UX for selected option and navigating with keyboard
             onClick={() => { onSelect(option) }}>{option.displayText}</button>
         </li>
