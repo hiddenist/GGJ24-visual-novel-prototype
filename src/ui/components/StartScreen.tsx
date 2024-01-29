@@ -14,7 +14,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({ setPlayerName }) => {
   }
 
   React.useEffect(() => {
-    let timeout: number
+    let timeout: NodeJS.Timeout
     if (name) {
       timeout = setTimeout(() => {
         setShowButton(true)

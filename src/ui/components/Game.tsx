@@ -207,7 +207,7 @@ const MessageText = React.forwardRef<
   ) {
     const [textToDisplay, setTextToDisplay] = React.useState<string>("")
     const stableRef = React.useRef<{
-      interval?: number,
+      interval?: NodeJS.Timeout,
       onFinish: typeof onFinish,
       position: number
     }>({
