@@ -40,6 +40,8 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
+        with:
+          version: "8.6.0"
 
       - name: Build
         run: pnpm build
